@@ -61,19 +61,16 @@ st.sidebar.header("설계 개요 입력")
 
 selected_uses = st.sidebar.multiselect("건물 용도(시설 구분)", facility_list)
 
-st.sidebar.markdown("**규모**")
+selected_jimok = st.sidebar.multiselect("지목", JIMOK_LIST)
+
+selected_zones = st.sidebar.multiselect("용도지역 · 지구 · 구역", ZONE_ALL)
+
 site_area = st.sidebar.number_input("대지면적(㎡)", min_value=0.0, value=0.0, step=10.0)
 building_area = st.sidebar.number_input("건축면적(㎡)", min_value=0.0, value=0.0, step=10.0)
 total_floor_area = st.sidebar.number_input("연면적(㎡)", min_value=0.0, value=0.0, step=10.0)
 height = st.sidebar.number_input("높이(m)", min_value=0.0, value=0.0, step=1.0)
-num_floors_above = st.sidebar.number_input("지상층수", min_value=0, value=0, step=1)
-num_floors_below = st.sidebar.number_input("지하층수", min_value=0, value=0, step=1)
-
-st.sidebar.markdown("**용도지역 · 지구 · 구역**")
-selected_zones = st.sidebar.multiselect("용도지역 · 지구 · 구역", ZONE_ALL)
-
-st.sidebar.markdown("**지목**")
-selected_jimok = st.sidebar.multiselect("지목", JIMOK_LIST)
+num_floors_above = st.sidebar.number_input("층수(지상)", min_value=0, value=0, step=1)
+num_floors_below = st.sidebar.number_input("층수(지하)", min_value=0, value=0, step=1)
 
 # 숫자형 입력값
 numeric_values = {
