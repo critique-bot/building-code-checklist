@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="건축 인허가 법규검토 체크리스트", layout="wide")
-st.title("건축 인허가 법규검토 체크리스트")
+st.set_page_config(page_title="한국건축규정 체크리스트", layout="wide")
+st.title("한국건축규정 체크리스트")
 
 FACILITY_SHEET = "개별용도 시설기준 (26개 시설, 146개)"
 
@@ -157,14 +157,14 @@ def judge_row(row):
     if not conds:
         return "확인필요"
 
-    return "대상" if all(conds) else "제외"
+    return "대상" if all(conds) else "비대상"
 
 
 def render_table(df):
     df = df.copy()
     df["판정"] = df.apply(judge_row, axis=1)
 
-    color_map = {"대상": "🔴 대상", "제외": "⚪ 제외", "확인필요": "🟡 확인필요"}
+    color_map = {"대상": "🟢 대상", "비대상": "🔴 비대상", "확인필요": "🟡 확인필요"}
     df["판정_표시"] = df["판정"].map(color_map).fillna(df["판정"])
 
     show_cols = [c for c in ["연번", "법명", "조항번호", "내용", "판정_표시"] if c in df.columns]
@@ -177,8 +177,10 @@ def render_table(df):
     return df
 
 
-# ---------------- ① 용도별 개별 시설기준 ----------------
-st.header("① 용도별 개별 시설기준")
+CIRCLED_NUMS = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩"]
+
+# ---------------- ① 개별용도 시설기준 ----------------
+st.header(f"{CIRCLED_NUMS[0]} {FACILITY_SHEET}")
 
 filtered = pd.DataFrame()
 if selected_uses:
@@ -188,12 +190,11 @@ if selected_uses:
 else:
     st.info("왼쪽에서 건물 용도를 선택하면 해당 용도의 개별 시설기준 법령이 표시됩니다.")
 
-# ---------------- ② 공통 체크리스트 (자동판별 포함) ----------------
+# ---------------- ②~ 공통 체크리스트 (자동판별 포함) ----------------
 result_frames = []
 if show_common:
-    st.header("② 공통 체크리스트 (대상 / 제외 / 확인필요 자동판별)")
-    for cat in common_categories:
-        with st.expander(cat):
+    for idx, cat in enumerate(common_categories, start=1):
+        with st.expander(f"{CIRCLED_NUMS[idx]} {cat}", expanded=True):
             result_df = render_table(sheets[cat])
             result_frames.append(result_df)
 
