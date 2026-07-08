@@ -63,6 +63,27 @@ common_categories = [name for name in sheets.keys() if name != FACILITY_SHEET]
 # ---------------- 사이드바: 설계 개요 입력 ----------------
 st.sidebar.header("설계 개요 입력")
 
+address_input = st.sidebar.text_input("대지 주소", placeholder="예: 경기 안양시 동안구 비산동 1109")
+
+
+def classify_eup_myeon(address: str) -> str:
+    """주소 문자열에서 읍/면 여부를 판별. 읍 또는 면으로 끝나는 행정동 단위가 있으면 '대상', 없으면(동 등) '비대상'."""
+    if not address:
+        return "비대상"
+    tokens = address.split()
+    for t in tokens:
+        if t.endswith("읍"):
+            return "대상"
+    for t in tokens:
+        if t.endswith("면"):
+            return "대상"
+    return "비대상"
+
+
+is_eup_myeon = classify_eup_myeon(address_input)
+if address_input:
+    st.sidebar.caption(f"읍 · 면 판별 결과: **{is_eup_myeon}**")
+
 selected_uses = st.sidebar.multiselect("건물 용도(시설 구분)", facility_list)
 
 selected_jimok = st.sidebar.multiselect("지목", JIMOK_LIST)
@@ -70,8 +91,6 @@ selected_jimok = st.sidebar.multiselect("지목", JIMOK_LIST)
 selected_zones = st.sidebar.multiselect("용도지역 · 지구 · 구역", ZONE_ALL)
 
 is_urban_planning_facility = st.sidebar.radio("도시 · 군계획시설", ["비대상", "대상"], horizontal=True)
-
-is_eup_myeon = st.sidebar.radio("읍 · 면", ["비대상", "대상"], horizontal=True)
 
 site_area = st.sidebar.number_input("대지면적(㎡)", min_value=0.0, value=0.0, step=10.0)
 building_area = st.sidebar.number_input("건축면적(㎡)", min_value=0.0, value=0.0, step=10.0)
