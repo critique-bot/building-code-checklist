@@ -194,7 +194,8 @@ else:
 result_frames = []
 if show_common:
     for idx, cat in enumerate(common_categories, start=1):
-        with st.expander(f"{CIRCLED_NUMS[idx]} {cat}", expanded=True):
+        st.header(f"{CIRCLED_NUMS[idx]} {cat}")
+        with st.expander("목록 펼치기 / 접기", expanded=True):
             result_df = render_table(sheets[cat])
             result_frames.append(result_df)
 
