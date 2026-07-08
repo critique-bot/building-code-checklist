@@ -69,6 +69,10 @@ selected_jimok = st.sidebar.multiselect("지목", JIMOK_LIST)
 
 selected_zones = st.sidebar.multiselect("용도지역 · 지구 · 구역", ZONE_ALL)
 
+is_urban_planning_facility = st.sidebar.radio("도시 · 군계획시설", ["비대상", "대상"], horizontal=True)
+
+is_eup_myeon = st.sidebar.radio("읍 · 면", ["비대상", "대상"], horizontal=True)
+
 site_area = st.sidebar.number_input("대지면적(㎡)", min_value=0.0, value=0.0, step=10.0)
 building_area = st.sidebar.number_input("건축면적(㎡)", min_value=0.0, value=0.0, step=10.0)
 total_floor_area = st.sidebar.number_input("연면적(㎡)", min_value=0.0, value=0.0, step=10.0)
@@ -90,6 +94,13 @@ numeric_values = {
 list_values = {
     "용도지역지구구역": selected_zones,
     "지목": selected_jimok,
+    "건물용도": selected_uses,
+}
+
+# Y/N형 입력값
+yn_values = {
+    "도시군계획시설": is_urban_planning_facility,
+    "읍면": is_eup_myeon,
 }
 
 show_common = st.sidebar.checkbox("공통 체크리스트(용도 무관) 표시", value=True)
@@ -129,8 +140,25 @@ def eval_condition(item, op, threshold):
     if item in numeric_values:
         return compare_numeric(numeric_values[item], op, threshold)
 
+    if item in yn_values:
+        if op == "==":
+            return yn_values[item] == threshold
+        return None
+
     if item in list_values:
         selected = list_values[item]
+        if op == "is_empty":
+            return len(selected) == 0
+        if op == "count_gte":
+            try:
+                return len(selected) >= float(threshold)
+            except (TypeError, ValueError):
+                return None
+        if op == "count_lte":
+            try:
+                return len(selected) <= float(threshold)
+            except (TypeError, ValueError):
+                return None
         if not isinstance(threshold, str):
             return None
         candidates = [t.strip() for t in threshold.split(",")]
@@ -161,7 +189,13 @@ def judge_row(row):
     if not conds:
         return "확인필요"
 
-    return "대상" if all(conds) else "비대상"
+    result = all(conds)
+    true_label = row.get("참판정")
+    false_label = row.get("거짓판정")
+    if result:
+        return true_label.strip() if isinstance(true_label, str) and true_label.strip() else "대상"
+    else:
+        return false_label.strip() if isinstance(false_label, str) and false_label.strip() else "비대상"
 
 
 def render_table(df):
