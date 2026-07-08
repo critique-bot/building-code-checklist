@@ -35,6 +35,9 @@ ZONE_AREAS = [
     "상대보호구역", "절대보호구역", "지구단위계획구역",
 ]
 
+# 용도지역·지구·구역을 하나의 선택목록으로 통합
+ZONE_ALL = ZONE_TYPES + ZONE_DISTRICTS + ZONE_AREAS
+
 JIMOK_LIST = [
     "전", "답", "과수원", "목장용지", "임야", "광천지", "염전", "대", "공장용지", "학교용지",
     "주차장", "주유소용지", "창고용지", "도로", "철도용지", "제방", "하천", "구거", "유지",
@@ -63,12 +66,11 @@ site_area = st.sidebar.number_input("대지면적(㎡)", min_value=0.0, value=0.
 building_area = st.sidebar.number_input("건축면적(㎡)", min_value=0.0, value=0.0, step=10.0)
 total_floor_area = st.sidebar.number_input("연면적(㎡)", min_value=0.0, value=0.0, step=10.0)
 height = st.sidebar.number_input("높이(m)", min_value=0.0, value=0.0, step=1.0)
-num_floors = st.sidebar.number_input("층수", min_value=0, value=0, step=1)
+num_floors_above = st.sidebar.number_input("지상층수", min_value=0, value=0, step=1)
+num_floors_below = st.sidebar.number_input("지하층수", min_value=0, value=0, step=1)
 
 st.sidebar.markdown("**용도지역 · 지구 · 구역**")
-selected_zone_types = st.sidebar.multiselect("용도지역", ZONE_TYPES)
-selected_zone_districts = st.sidebar.multiselect("용도지구", ZONE_DISTRICTS)
-selected_zone_areas = st.sidebar.multiselect("용도구역", ZONE_AREAS)
+selected_zones = st.sidebar.multiselect("용도지역 · 지구 · 구역", ZONE_ALL)
 
 st.sidebar.markdown("**지목**")
 selected_jimok = st.sidebar.multiselect("지목", JIMOK_LIST)
@@ -79,14 +81,13 @@ numeric_values = {
     "건축면적": building_area,
     "연면적": total_floor_area,
     "높이": height,
-    "층수": num_floors,
+    "지상층수": num_floors_above,
+    "지하층수": num_floors_below,
 }
 
 # 다중선택(리스트)형 입력값
 list_values = {
-    "용도지역": selected_zone_types,
-    "용도지구": selected_zone_districts,
-    "용도구역": selected_zone_areas,
+    "용도지역지구구역": selected_zones,
     "지목": selected_jimok,
 }
 
