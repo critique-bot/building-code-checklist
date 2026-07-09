@@ -98,6 +98,8 @@ common_categories = [name for name in sheets.keys() if name != FACILITY_SHEET]
 # ---------------- 사이드바: 설계 개요 입력 ----------------
 st.sidebar.header("설계 개요 입력")
 
+building_type = st.sidebar.radio("공공건축물 · 민간건축물", ["공공건축물", "민간건축물"], horizontal=True)
+
 selected_uses_display = st.sidebar.multiselect("건물 용도(시설 구분)", FACILITY_DISPLAY_ORDER)
 selected_uses = list({FACILITY_DISPLAY_TO_DATA.get(u, u) for u in selected_uses_display})
 
@@ -126,7 +128,7 @@ selected_jimok = st.sidebar.multiselect("지목", JIMOK_LIST)
 
 selected_zones = st.sidebar.multiselect("용도지역 · 지구 · 구역", ZONE_ALL)
 
-is_urban_planning_facility = st.sidebar.radio("도시 · 군계획시설", ["비대상", "대상"], horizontal=True)
+is_urban_planning_facility = st.sidebar.radio("도시 · 군계획시설", ["대상", "비대상"], horizontal=True)
 
 site_area = st.sidebar.number_input("대지면적(㎡)", min_value=0.0, value=0.0, step=10.0)
 building_area = st.sidebar.number_input("건축면적(㎡)", min_value=0.0, value=0.0, step=10.0)
@@ -222,10 +224,39 @@ def eval_condition(item, op, threshold):
             return any(c in selected for c in candidates)
         elif op == "contains_all":
             return all(c in selected for c in candidates)
+        elif op == "not_contains_any":
+            return not any(c in selected for c in candidates)
     return None
 
 
+def judge_2_1(row):
+    """공중화장실 등에 관한 법률 제7조 - 공공/민간건축물에 따라 조건이 달라지는 특수 케이스"""
+    if building_type == "공공건축물":
+        area_required_uses = {"문화 및 집회시설", "의료시설", "교육연구시설", "노유자시설", "수련시설"}
+        no_area_uses = {"업무시설", "묘지 관련 시설", "장례식장"}  # 장례시설 -> 장례식장(매핑값)
+        matched_area_required = any(u in selected_uses for u in area_required_uses)
+        matched_no_area = any(u in selected_uses for u in no_area_uses)
+        ok = (matched_area_required and total_floor_area >= 1000) or matched_no_area
+        return "검토필요" if ok else "대상아님"
+    else:  # 민간건축물
+        candidates = {"근린생활시설", "업무시설"}  # 제1종/2종 근린생활시설 -> 근린생활시설(매핑값)
+        matched = any(u in selected_uses for u in candidates)
+        ok = matched and total_floor_area >= 2000
+        return "검토필요" if ok else "대상아님"
+
+
+SPECIAL_JUDGERS = {
+    ("공중화장실 등에 관한 법률", "제7조"): judge_2_1,
+    ("공중화장실 등에 관한 법률", "제7조의2"): judge_2_1,
+}
+
+
 def judge_row(row):
+    # 특수 케이스(엑셀 조건식으로 표현 안 되는 복잡한 조항)가 등록되어 있으면 그걸 우선 사용
+    special_key = (row.get("법명"), row.get("조항번호"))
+    if special_key in SPECIAL_JUDGERS:
+        return SPECIAL_JUDGERS[special_key](row)
+
     # 기본판정이 채워져 있으면 조건 계산 없이 그대로 사용
     base = row.get("기본판정")
     if isinstance(base, str) and base.strip() != "":
@@ -233,6 +264,7 @@ def judge_row(row):
 
     cond1 = eval_condition(row.get("기준항목1"), row.get("연산자1"), row.get("기준값1"))
     cond2 = eval_condition(row.get("기준항목2"), row.get("연산자2"), row.get("기준값2"))
+    cond3 = eval_condition(row.get("기준항목3"), row.get("연산자3"), row.get("기준값3"))
 
     has_any_condition_defined = isinstance(row.get("기준항목1"), str) and row.get("기준항목1").strip() != ""
     if not has_any_condition_defined:
@@ -240,8 +272,13 @@ def judge_row(row):
     if cond1 is None:
         return "검토필요"
 
-    conds = [c for c in [cond1, cond2] if c is not None]
-    return "검토필요" if all(conds) else "대상아님"
+    conds = [c for c in [cond1, cond2, cond3] if c is not None]
+
+    logic = row.get("조건연결")
+    logic = logic.strip().upper() if isinstance(logic, str) and logic.strip() else "AND"
+
+    result = any(conds) if logic == "OR" else all(conds)
+    return "검토필요" if result else "대상아님"
 
 
 def render_table(df):
