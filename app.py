@@ -220,31 +220,21 @@ def judge_row(row):
     cond1 = eval_condition(row.get("기준항목1"), row.get("연산자1"), row.get("기준값1"))
     cond2 = eval_condition(row.get("기준항목2"), row.get("연산자2"), row.get("기준값2"))
 
-    conds = [c for c in [cond1, cond2] if c is not None]
     has_any_condition_defined = isinstance(row.get("기준항목1"), str) and row.get("기준항목1").strip() != ""
-
     if not has_any_condition_defined:
-        return "확인필요"
-    if any(c is None for c in [cond1] if row.get("기준항목1")):
-        return "확인필요"
+        return "검토필요"
+    if cond1 is None:
+        return "검토필요"
 
-    if not conds:
-        return "확인필요"
-
-    result = all(conds)
-    true_label = row.get("참판정")
-    false_label = row.get("거짓판정")
-    if result:
-        return true_label.strip() if isinstance(true_label, str) and true_label.strip() else "대상"
-    else:
-        return false_label.strip() if isinstance(false_label, str) and false_label.strip() else "비대상"
+    conds = [c for c in [cond1, cond2] if c is not None]
+    return "검토필요" if all(conds) else "대상아님"
 
 
 def render_table(df):
     df = df.copy()
     df["판정"] = df.apply(judge_row, axis=1)
 
-    color_map = {"대상": "🟢 대상", "비대상": "🔴 비대상", "확인필요": "🟡 확인필요"}
+    color_map = {"검토필요": "🟢 검토필요", "대상아님": "🔴 대상아님"}
     df["판정_표시"] = df["판정"].map(color_map).fillna(df["판정"])
 
     show_cols = [c for c in ["연번", "법명", "조항번호", "내용", "판정_표시"] if c in df.columns]
