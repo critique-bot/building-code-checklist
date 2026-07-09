@@ -19,7 +19,7 @@ ZONE_TYPES = [
     "전용공업지역", "일반공업지역", "준공업지역",
     "보전녹지지역", "생산녹지지역", "자연녹지지역",
     # 개별법 전용 추가 항목
-    "역사문화환경보존지역",
+    "역사문화환경 보존지역",
 ]
 
 ZONE_DISTRICTS = [
@@ -37,6 +37,11 @@ ZONE_AREAS = [
     "도시혁신구역", "복합용도구역", "도시·군계획시설입체복합구역",
     # 개별법 전용 추가 항목
     "상대보호구역", "절대보호구역", "지구단위계획구역", "접도구역", "항만구역", "도로구역",
+    "산림보호구역", "상수원보호구역",
+    "국가지정문화유산구역",
+    "과밀억제권역", "성장관리권역", "자연보전권역",
+    "습지보호지역", "습지주변관리지역", "역사문화권정비구역", "연구개발특구", "시·도 생태·경관보전지역",
+    "무선방위측정장치보호구역", "철도보호지구", "하천구역", "택지개발지구", "혁신도시개발예정지구", "특별대책지역",
 ]
 
 # 용도지역·지구·구역을 하나의 선택목록으로 통합
@@ -74,7 +79,15 @@ JIMOK_LIST = [
 
 @st.cache_data
 def load_data():
-    return pd.read_excel("regulations_full.xlsx", sheet_name=None)
+    sheets = pd.read_excel("regulations_full.xlsx", sheet_name=None)
+    # 시트마다 열 구성이 조금씩 달라도(예: 조항번호/내용 없는 시트) 화면 정렬이
+    # 어긋나지 않도록, 표시에 쓰는 표준 열이 없으면 빈 값으로 채워둔다.
+    for name, df in sheets.items():
+        for col in ["조항번호", "내용"]:
+            if col not in df.columns:
+                df[col] = ""
+        sheets[name] = df
+    return sheets
 
 
 sheets = load_data()
@@ -137,6 +150,7 @@ list_values = {
     "용도지역지구구역": selected_zones,
     "지목": selected_jimok,
     "건물용도": selected_uses,
+    "건물용도표시": selected_uses_display,
 }
 
 # Y/N형 입력값
