@@ -159,7 +159,7 @@ yn_values = {
     "읍면": is_eup_myeon,
 }
 
-show_common = st.sidebar.checkbox("공통 체크리스트(용도 무관) 표시", value=True)
+show_not_applicable = st.sidebar.checkbox("대상아님 표시", value=False)
 
 st.sidebar.markdown("---")
 st.sidebar.caption(
@@ -248,6 +248,9 @@ def render_table(df):
     df = df.copy()
     df["판정"] = df.apply(judge_row, axis=1)
 
+    if not show_not_applicable:
+        df = df[df["판정"] != "대상아님"]
+
     color_map = {"검토필요": "🟢 검토필요", "대상아님": "🔴 대상아님"}
     df["판정_표시"] = df["판정"].map(color_map).fillna(df["판정"])
 
@@ -268,20 +271,20 @@ st.header(f"{CIRCLED_NUMS[0]} {FACILITY_SHEET}")
 
 filtered = pd.DataFrame()
 if selected_uses:
-    filtered = facility_df[facility_df["시설 구분"].isin(selected_uses)]
-    st.write(f"선택한 용도({', '.join(selected_uses)})에 해당하는 법령 **{len(filtered)}건**")
-    filtered = render_table(filtered)
+    raw_matched = facility_df[facility_df["시설 구분"].isin(selected_uses)]
+    visible_count = raw_matched.apply(judge_row, axis=1).ne("대상아님").sum() if not show_not_applicable else len(raw_matched)
+    label = "검토가 필요한" if not show_not_applicable else "해당하는"
+    st.write(f"선택한 용도({', '.join(selected_uses)}) 중 {label} 법령 **{visible_count}건**")
+    filtered = render_table(raw_matched)
 else:
     st.info("왼쪽에서 건물 용도를 선택하면 해당 용도의 개별 시설기준 법령이 표시됩니다.")
 
 # ---------------- ②~ 공통 체크리스트 (자동판별 포함) ----------------
 result_frames = []
-if show_common:
-    for idx, cat in enumerate(common_categories, start=1):
-        st.header(f"{CIRCLED_NUMS[idx]} {cat}")
-        with st.expander("목록 펼치기 / 접기", expanded=True):
-            result_df = render_table(sheets[cat])
-            result_frames.append(result_df)
+for idx, cat in enumerate(common_categories, start=1):
+    st.header(f"{CIRCLED_NUMS[idx]} {cat}")
+    result_df = render_table(sheets[cat])
+    result_frames.append(result_df)
 
 # ---------------- 결과 다운로드 ----------------
 st.markdown("---")
@@ -291,11 +294,10 @@ if st.button("현재 체크리스트 엑셀로 저장"):
         tmp = filtered.copy()
         tmp["구분"] = "개별용도 시설기준"
         combined.append(tmp)
-    if show_common:
-        for cat, rdf in zip(common_categories, result_frames):
-            tmp = rdf.copy()
-            tmp["구분"] = cat
-            combined.append(tmp)
+    for cat, rdf in zip(common_categories, result_frames):
+        tmp = rdf.copy()
+        tmp["구분"] = cat
+        combined.append(tmp)
     result_df = pd.concat(combined, ignore_index=True)
     output_path = "검토결과.xlsx"
     result_df.to_excel(output_path, index=False)
