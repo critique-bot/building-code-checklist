@@ -98,7 +98,7 @@ common_categories = [name for name in sheets.keys() if name != FACILITY_SHEET]
 # ---------------- 사이드바: 설계 개요 입력 ----------------
 st.sidebar.header("설계 개요 입력")
 
-building_type = st.sidebar.radio("공공건축물 · 민간건축물", ["공공건축물", "민간건축물"], horizontal=True)
+building_type = st.sidebar.radio("공공건축물 · 민간건축물", ["공공건축물", "민간건축물"], horizontal=True, label_visibility="collapsed")
 
 selected_uses_display = st.sidebar.multiselect("건물 용도(시설 구분)", FACILITY_DISPLAY_ORDER)
 selected_uses = list({FACILITY_DISPLAY_TO_DATA.get(u, u) for u in selected_uses_display})
