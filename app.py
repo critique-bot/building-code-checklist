@@ -168,7 +168,7 @@ def compare_numeric(value, op, threshold):
         return value <= threshold
     elif op == "<":
         return value < threshold
-    elif op == "==":
+    elif op == "eq":
         return value == threshold
     return None
 
@@ -183,7 +183,7 @@ def eval_condition(item, op, threshold):
         return compare_numeric(numeric_values[item], op, threshold)
 
     if item in yn_values:
-        if op == "==":
+        if op == "eq":
             return yn_values[item] == threshold
         return None
 
