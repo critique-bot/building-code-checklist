@@ -264,6 +264,11 @@ def render_table(df):
     return df
 
 
+def count_review_needed(df):
+    """검토필요로 판정되는 항목 수를 센다 (대상아님 표시 여부와 무관하게 항상 동일 기준)."""
+    return (df.apply(judge_row, axis=1) == "검토필요").sum()
+
+
 CIRCLED_NUMS = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩"]
 
 # ---------------- ① 개별용도 시설기준 ----------------
@@ -272,9 +277,7 @@ st.header(f"{CIRCLED_NUMS[0]} {FACILITY_SHEET}")
 filtered = pd.DataFrame()
 if selected_uses:
     raw_matched = facility_df[facility_df["시설 구분"].isin(selected_uses)]
-    visible_count = raw_matched.apply(judge_row, axis=1).ne("대상아님").sum() if not show_not_applicable else len(raw_matched)
-    label = "검토가 필요한" if not show_not_applicable else "해당하는"
-    st.write(f"선택한 용도({', '.join(selected_uses)}) 중 {label} 법령 **{visible_count}건**")
+    st.write(f"검토가 필요한 법령 **{count_review_needed(raw_matched)}건**")
     filtered = render_table(raw_matched)
 else:
     st.info("왼쪽에서 건물 용도를 선택하면 해당 용도의 개별 시설기준 법령이 표시됩니다.")
@@ -283,6 +286,7 @@ else:
 result_frames = []
 for idx, cat in enumerate(common_categories, start=1):
     st.header(f"{CIRCLED_NUMS[idx]} {cat}")
+    st.write(f"검토가 필요한 법령 **{count_review_needed(sheets[cat])}건**")
     result_df = render_table(sheets[cat])
     result_frames.append(result_df)
 
