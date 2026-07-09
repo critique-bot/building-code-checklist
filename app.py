@@ -42,6 +42,29 @@ ZONE_AREAS = [
 # 용도지역·지구·구역을 하나의 선택목록으로 통합
 ZONE_ALL = ZONE_TYPES + ZONE_DISTRICTS + ZONE_AREAS
 
+# 건물 용도 화면 표시 순서 (요청하신 순서 그대로)
+FACILITY_DISPLAY_ORDER = [
+    "단독주택", "공동주택", "제1종 근린생활시설", "제2종 근린생활시설",
+    "문화 및 집회시설", "종교시설", "판매시설", "운수시설", "의료시설",
+    "교육연구시설", "노유자시설", "수련시설", "운동시설", "업무시설",
+    "숙박시설", "위락시설", "공장", "창고시설", "위험물 저장 및 처리 시설",
+    "자동차 관련 시설", "동물 및 식물 관련 시설", "자원순환 관련 시설",
+    "교정시설", "국방·군사시설", "방송통신시설", "발전시설",
+    "묘지 관련 시설", "관광 휴게시설", "장례시설", "야영장 시설",
+]
+
+# 화면 표시명 -> 실제 데이터("시설 구분") 값 매핑
+FACILITY_DISPLAY_TO_DATA = {
+    "단독주택": "주택",
+    "공동주택": "주택",
+    "제1종 근린생활시설": "근린생활시설",
+    "제2종 근린생활시설": "근린생활시설",
+    "자동차 관련 시설": "자동차관련시설",
+    "교정시설": "교정 및 군사 시설",
+    "국방·군사시설": "교정 및 군사 시설",
+    "장례시설": "장례식장",
+}
+
 JIMOK_LIST = [
     "전", "답", "과수원", "목장용지", "임야", "광천지", "염전", "대", "공장용지", "학교용지",
     "주차장", "주유소용지", "창고용지", "도로", "철도용지", "제방", "하천", "구거", "유지",
@@ -56,14 +79,16 @@ def load_data():
 
 sheets = load_data()
 facility_df = sheets[FACILITY_SHEET]
-facility_list = sorted(facility_df["시설 구분"].unique().tolist())
 common_categories = [name for name in sheets.keys() if name != FACILITY_SHEET]
 
 
 # ---------------- 사이드바: 설계 개요 입력 ----------------
 st.sidebar.header("설계 개요 입력")
 
-address_input = st.sidebar.text_input("대지 주소", placeholder="예: 경기 안양시 동안구 비산동 1109")
+selected_uses_display = st.sidebar.multiselect("건물 용도(시설 구분)", FACILITY_DISPLAY_ORDER)
+selected_uses = list({FACILITY_DISPLAY_TO_DATA.get(u, u) for u in selected_uses_display})
+
+address_input = st.sidebar.text_input("대지 주소", placeholder="예: 서울특별시 종로구 삼일대로 451")
 
 
 def classify_eup_myeon(address: str) -> str:
@@ -83,8 +108,6 @@ def classify_eup_myeon(address: str) -> str:
 is_eup_myeon = classify_eup_myeon(address_input)
 if address_input:
     st.sidebar.caption(f"읍 · 면 판별 결과: **{is_eup_myeon}**")
-
-selected_uses = st.sidebar.multiselect("건물 용도(시설 구분)", facility_list)
 
 selected_jimok = st.sidebar.multiselect("지목", JIMOK_LIST)
 
